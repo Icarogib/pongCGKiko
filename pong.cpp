@@ -25,6 +25,9 @@
 */
 
 
+bool scored_left = false;
+bool scored_right = false;
+
 // window size and update rate (60 fps)
 int width = 500;
 int height = 200;
@@ -32,7 +35,7 @@ int interval = 1000 / 60;
 
 // rackets in general
 int racket_width = 10;
-int racket_height = 80;
+int racket_height = 100;
 int racket_speed = 3;
 
 // left racket position
@@ -114,6 +117,11 @@ void keyboard(GLubyte key, GLint x, GLint y) {
         racket_left_y += racket_speed;
     if (key == 's')
         racket_left_y -= racket_speed;
+    if (key == 13){
+        ball_speed = 2;
+        scored_right = false;
+        scored_left = false;
+    }
 }
 
 void eventoTecladoEspecial(GLint key, GLint x, GLint y){
@@ -136,8 +144,19 @@ void vec2_norm(float& x, float &y) {
 
 void updateBall() {
     // fly a bit
-    ball_pos_x += ball_dir_x * ball_speed;
-    ball_pos_y += ball_dir_y * ball_speed;
+    
+    if(scored_right){
+        ball_pos_x = racket_right_x - 10;
+        ball_pos_y = racket_right_y + (racket_height /2);
+        //scored_right = false;
+    } else if(scored_left){
+        ball_pos_x = racket_left_x + 10;
+        ball_pos_y = racket_left_y + (racket_height /2);
+    } else{
+        ball_pos_x += ball_dir_x * ball_speed;
+        ball_pos_y += ball_dir_y * ball_speed;
+    }
+    
    
     // hit by left racket?
     if (ball_pos_x < racket_left_x + racket_width &&
@@ -149,6 +168,8 @@ void updateBall() {
         float t = ((ball_pos_y - racket_left_y) / racket_height) - 0.5f;
         ball_dir_x = fabs(ball_dir_x); // force it to be positive
         ball_dir_y = t;
+        if(ball_speed < 12)
+            ball_speed++;
     }
    
     // hit by right racket?
@@ -161,24 +182,31 @@ void updateBall() {
         float t = ((ball_pos_y - racket_right_y) / racket_height) - 0.5f;
         ball_dir_x = -fabs(ball_dir_x); // force it to be negative
         ball_dir_y = t;
+        if(ball_speed < 12)
+            ball_speed++;
     }
 
     // hit left wall?
     if (ball_pos_x < 0) {
         ++score_right;
-        ball_pos_x = width / 2;
-        ball_pos_y = height / 2;
-        ball_dir_x = fabs(ball_dir_x); // force it to be positive
+        //ball_pos_x = width / 2;
+        //ball_pos_y = height / 2;
+        ball_dir_x = -fabs(ball_dir_x); // force it to be positive
         ball_dir_y = 0;
+        scored_right = true;
+        ball_speed = 0;
+        
     }
 
     // hit right wall?
     if (ball_pos_x > width) {
         ++score_left;
-        ball_pos_x = width / 2;
-        ball_pos_y = height / 2;
-        ball_dir_x = -fabs(ball_dir_x); // force it to be negative
+        //ball_pos_x = width / 2;
+        //ball_pos_y = height / 2;
+        ball_dir_x = fabs(ball_dir_x); // force it to be negative
         ball_dir_y = 0;
+        scored_left = true;
+        ball_speed = 0;
     }
 
     // hit top wall?
@@ -218,7 +246,7 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(width, height);
-    glutCreateWindow("noobtuts.com Pong");
+    glutCreateWindow("Pong");
 
     // Register callback functions  
     glutDisplayFunc(draw);
